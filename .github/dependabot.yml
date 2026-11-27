@@ -7,6 +7,11 @@ updates:
     # Give new releases a week before picking them up, so a bad publish has time to get pulled.
     cooldown:
       default-days: 7
+    # @types/node follows the oldest Node version promptveil supports, so the
+    # types never offer an API that Node doesn't have.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-deps:
         patterns: ["*"]
