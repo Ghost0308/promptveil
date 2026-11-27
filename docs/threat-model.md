@@ -24,7 +24,9 @@ Detection is pattern based. It finds things with a known shape and misses the re
 
 Placeholders follow a public format, so anyone can guess `[[SECRET_1]]`. A prompt injection can ask the model to put it in a tool call, like a URL to fetch or an email to send. If you restore the tool arguments, the real value goes to whoever the injection picked.
 
-`restore` and the streaming helpers take a `types` option for this. The rule I follow is to restore everything in text a person reads, and only the types a tool really needs in its arguments. Restoring never happens on its own, only where your code calls it.
+`restore` and the streaming helpers take a `types` option for this. The AI SDK middleware uses it by default: tool call arguments get nothing back unless `toolCallTypes` lists a type.
+
+A restored value can also contain characters that mean something where it lands. A quote inside a value put back into JSON would end the string early and could add keys of the attacker's choosing. The middleware escapes values going into tool arguments and JSON output, and `RestoreOptions.encode` with `escapeJsonString` does the same for your own code. The rule I follow is to restore everything in text a person reads, and only the types a tool really needs in its arguments. Restoring never happens on its own, only where your code calls it.
 
 A related case is text that already contains a placeholder before redaction, like a user typing `[[EMAIL_1]]`. A new placeholder never matches text that was already in the message being redacted, so restoring can't change what was there. With a vault reused across messages, an earlier placeholder can show up in a later message, and restoring will fill it in. That falls under the same rule: only restore what you mean to show.
 

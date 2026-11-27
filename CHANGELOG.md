@@ -9,3 +9,6 @@ First version.
 - Streaming restore through `restorer`, `restoreStream` and `restoreIterable`, which holds back only a partial placeholder at the end of a chunk
 - `seal` and `Vault.unseal` encrypt a vault with AES-256-GCM for keeping it between requests
 - Custom detectors through `patternDetector`, and custom secret rules in the same JSON format safetape uses
+- `promptveil/ai-sdk`, a middleware for the Vercel AI SDK 7 that redacts every call and restores replies and streams, with a separate rule for tool call arguments
+- `RestoreOptions.encode` and `escapeJsonString`, for putting values back into JSON safely
+- `RedactOptions.context`, so new placeholders also avoid text elsewhere in a conversation
