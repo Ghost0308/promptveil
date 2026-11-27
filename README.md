@@ -73,6 +73,29 @@ const args = vault.restore(toolCall.arguments, { types: ["EMAIL"] });
 
 `restorer`, `restoreStream` and `restoreIterable` take the same `types` option.
 
+## With the Vercel AI SDK
+
+If you use the AI SDK (version 7), one middleware does all of this for every provider it supports:
+
+```ts
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateText, wrapLanguageModel } from "ai";
+import { promptveilMiddleware } from "promptveil/ai-sdk";
+
+const model = wrapLanguageModel({
+  model: anthropic("claude-opus-5-5"),
+  middleware: promptveilMiddleware(),
+});
+
+const { text } = await generateText({ model, prompt: "Draft a reply to jane@example.com" });
+```
+
+On every call it redacts everything the model would see, including tool calls and tool results from earlier steps, and puts the values back in the reply, streamed or not. Each call gets a fresh vault, so nothing carries over between users or requests.
+
+Tool call arguments get no values back unless you list the types they may have with `toolCallTypes`, for example `promptveilMiddleware({ toolCallTypes: ["EMAIL"] })`. Values that go back into JSON, like tool arguments or JSON output, are escaped first, so a value with a quote in it can't break the JSON.
+
+It adds no dependencies. `@ai-sdk/provider` is an optional peer dependency, and only its types are used.
+
 ## What it looks for
 
 By default it finds:
