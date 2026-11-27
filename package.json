@@ -1,0 +1,53 @@
+{
+  "name": "promptveil",
+  "version": "0.0.0",
+  "description": "Swap secrets and personal data in LLM prompts for placeholders, then put the real values back in the reply, even while it streams.",
+  "license": "MIT",
+  "author": "Parth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ghost0308/promptveil.git"
+  },
+  "homepage": "https://github.com/Ghost0308/promptveil",
+  "bugs": "https://github.com/Ghost0308/promptveil/issues",
+  "keywords": [
+    "llm",
+    "redaction",
+    "pii",
+    "secrets",
+    "privacy",
+    "streaming",
+    "anonymization",
+    "openai",
+    "anthropic"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.9",
+    "@types/node": "24.19.4",
+    "@vitest/coverage-v8": "5.1.2",
+    "fast-check": "4.11.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.2"
+  }
+}
