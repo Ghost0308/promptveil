@@ -23,6 +23,7 @@ export {
 } from "./rules.js";
 export {
   DEFAULT_FORMAT,
+  escapeJsonString,
   generateKey,
   isPartialPlaceholder,
   type PlaceholderFormat,

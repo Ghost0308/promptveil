@@ -6,6 +6,11 @@ export interface RedactOptions {
   readonly vault?: Vault;
   /** What to look for. Defaults to secrets, emails, card numbers, IPv4 addresses and phone numbers. */
   readonly detectors?: readonly Detector[];
+  /**
+   * Other text that new placeholders must not clash with, like the rest of the
+   * conversation in the same request. `text` itself is always checked.
+   */
+  readonly context?: string;
 }
 
 /** What was replaced, without the sensitive value itself, so it's safe to log. */
@@ -27,11 +32,12 @@ export interface RedactResult {
 export function redact(text: string, options: RedactOptions = {}): RedactResult {
   const vault = options.vault ?? new Vault();
   const detections = detectAll(text, options.detectors ?? defaultDetectors());
+  const context = options.context === undefined ? text : `${text}\n${options.context}`;
   const parts: string[] = [];
   const replacements: Replacement[] = [];
   let position = 0;
   for (const found of detections) {
-    const placeholder = vault.placeholderFor(found.type, found.value, text);
+    const placeholder = vault.placeholderFor(found.type, found.value, context);
     parts.push(text.slice(position, found.start), placeholder);
     replacements.push({
       type: found.type,

@@ -15,6 +15,16 @@ export interface RestoreOptions {
    * placeholders stay as they are. Leave it out to restore everything.
    */
   readonly types?: readonly string[];
+  /**
+   * Applied to each value as it goes back in. Use `escapeJsonString` when the
+   * text is JSON, so a value with a quote or backslash can't break out of its string.
+   */
+  readonly encode?: (value: string) => string;
+}
+
+/** `value` escaped to sit inside a JSON string, for `RestoreOptions.encode`. */
+export function escapeJsonString(value: string): string {
+  return JSON.stringify(value).slice(1, -1);
 }
 
 /** A vault encrypted with AES-256-GCM. Safe to store, useless without the key. */
@@ -86,9 +96,12 @@ export class Vault {
   /** `text` with every placeholder this vault knows swapped back for its value. */
   restore(text: string, options: RestoreOptions = {}): string {
     const types = options.types === undefined ? undefined : new Set(options.types);
+    const { encode } = options;
     return text.replace(this.#pattern, (whole, id: string) => {
       if (types !== undefined && !types.has(id.slice(0, id.lastIndexOf("_")))) return whole;
-      return this.#valueByPlaceholder.get(whole) ?? whole;
+      const value = this.#valueByPlaceholder.get(whole);
+      if (value === undefined) return whole;
+      return encode === undefined ? value : encode(value);
     });
   }
 
