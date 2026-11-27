@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ["22", "24", "26"]
+        include:
+          - os: windows-latest
+            node: "24"
+          - os: macos-latest
+            node: "24"
+    steps:
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      # Coverage thresholds live in vitest.config.ts, so this fails if coverage drops.
+      - run: npm test
+
+  package:
+    # Build the tarball npm would publish, install it somewhere else and use it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm pack --pack-destination "$RUNNER_TEMP"
+      # promptveil has no dependencies, so unpacking the tarball is the whole install.
+      - name: Unpack the tarball and run the smoke test
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke/node_modules/promptveil"
+          tar -xzf "$RUNNER_TEMP"/promptveil-*.tgz --strip-components=1 \
+            -C "$RUNNER_TEMP/smoke/node_modules/promptveil"
+          cp scripts/smoke.mjs "$RUNNER_TEMP/smoke/"
+          cd "$RUNNER_TEMP/smoke"
+          node smoke.mjs
+
+  workflows:
+    # zizmor checks the workflows and dependabot.yml: injection, loose permissions,
+    # unpinned or known-vulnerable actions, and pinned SHAs from the wrong repo.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@1b4550e929643b8b26a62303c6bd64814271a4f1 # v0.9.2
+        with:
+          version: "1.33.1"
+          advanced-security: false
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Check dependencies for known vulnerabilities
+        run: npm audit --audit-level=low
+      - name: Check registry signatures and provenance
+        run: npm audit signatures
