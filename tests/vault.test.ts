@@ -1,8 +1,27 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { patternDetector } from "../src/detectors.js";
 import { redact } from "../src/redact.js";
-import { generateKey, isPartialPlaceholder, Vault } from "../src/vault.js";
+import { escapeJsonString, generateKey, isPartialPlaceholder, Vault } from "../src/vault.js";
 import { cardNumber, openaiKey } from "./fakes.js";
+
+describe("putting values into JSON", () => {
+  it("escapes values so the JSON still parses to the original", () => {
+    const tricky = patternDetector("tricky", "NAME", /Jo "the \\ hammer" \n Doe/);
+    const value = 'Jo "the \\ hammer" \n Doe';
+    const { vault } = redact(`I'm ${value}`, { detectors: [tricky] });
+    const json = vault.restore('{"name":"[[NAME_1]]"}', { encode: escapeJsonString });
+    expect(JSON.parse(json)).toEqual({ name: value });
+    expect(escapeJsonString("plain")).toBe("plain");
+  });
+});
+
+describe("redacting with context", () => {
+  it("skips placeholders that appear in the surrounding conversation", () => {
+    const { text } = redact("mail a@example.com", { context: "earlier: [[EMAIL_1]] [[EMAIL_2]]" });
+    expect(text).toBe("mail [[EMAIL_3]]");
+  });
+});
 
 function sample() {
   const key = openaiKey();
