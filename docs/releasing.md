@@ -20,7 +20,6 @@ npm sets up trusted publishing from a package's own settings page, so the packag
    ```
 
 4. On npmjs.com, open the package, go to Settings, and add a trusted publisher for GitHub Actions:
-
    - Organization or user: `Ghost0308`
    - Repository: `promptveil`
    - Workflow filename: `release.yml`
