@@ -1,6 +1,6 @@
 {
   "name": "promptveil",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Swap secrets and personal data in LLM prompts for placeholders, then put the real values back in the reply, even while it streams.",
   "license": "MIT",
   "author": "Parth",
