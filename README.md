@@ -6,8 +6,6 @@ It has no runtime dependencies. It's a sister project of [safetape](https://gith
 
 ## Install
 
-It's not on npm yet. Once the first release is out:
-
 ```sh
 npm install promptveil
 ```
