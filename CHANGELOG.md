@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `promptveil/anthropic` with `veilMessages`, for the Anthropic TypeScript SDK 1.x. It redacts a request and restores the reply or its stream events, and passes signed thinking blocks through untouched
+- `placeholderNote()`, a short system note that tells the model what the placeholders are. Both adapters now add it by default on calls where something was redacted, since without it models often remark on the placeholders or drop them. Turn it off with `note: false`
+
 ## 0.1.0
 
 First version.

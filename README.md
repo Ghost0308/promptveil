@@ -94,6 +94,42 @@ Tool call arguments get no values back unless you list the types they may have w
 
 It adds no dependencies. `@ai-sdk/provider` is an optional peer dependency, and only its types are used.
 
+## With the Anthropic SDK
+
+For code that calls Claude through `@anthropic-ai/sdk` (version 1), `veilMessages` redacts a request and gives you back what you need to restore the reply:
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+import { veilMessages } from "promptveil/anthropic";
+
+const client = new Anthropic();
+const veiled = veilMessages({
+  model: "claude-opus-5-5",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Draft a reply to jane@example.com" }],
+});
+
+const message = veiled.restore(await client.messages.create(veiled.params));
+```
+
+Streaming works the same way:
+
+```ts
+const stream = client.messages.stream(veiled.params);
+for await (const event of veiled.restoreStream(stream)) {
+  // text_delta events come out with the real values in them
+}
+const final = veiled.restore(await stream.finalMessage());
+```
+
+Call `veilMessages` for every request, with the whole conversation. It covers the system prompt, text, documents, search results, tool inputs and tool results. It takes the same `toolCallTypes` and `textTypes` options as the middleware. Thinking blocks pass through untouched both ways, because they're signed and the model only ever saw placeholders anyway.
+
+## The placeholder note
+
+Both adapters add a short system note telling the model what the placeholders are, on calls where something was redacted. Without it, models tend to comment on the placeholders or drop them. In a test with a local 8B model, the note took replies that mentioned "placeholders" from 2 out of 3 to none, and the real email came back in all of them.
+
+Turn it off with `note: false`, or pass your own text as `note`. `placeholderNote()` gives you the default text if you're building prompts yourself.
+
 ## What it looks for
 
 By default it finds:

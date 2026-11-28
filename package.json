@@ -13,13 +13,21 @@
     "./ai-sdk": {
       "types": "./dist/ai-sdk.d.ts",
       "import": "./dist/ai-sdk.js"
+    },
+    "./anthropic": {
+      "types": "./dist/anthropic.d.ts",
+      "import": "./dist/anthropic.js"
     }
   },
   "peerDependencies": {
-    "@ai-sdk/provider": "^4.0.0"
+    "@ai-sdk/provider": "^4.0.0",
+    "@anthropic-ai/sdk": "^1.0.0"
   },
   "peerDependenciesMeta": {
     "@ai-sdk/provider": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
       "optional": true
     }
   },
@@ -57,6 +65,7 @@
   },
   "devDependencies": {
     "@ai-sdk/provider": "4.0.39",
+    "@anthropic-ai/sdk": "1.12.0",
     "@biomejs/biome": "2.6.9",
     "@types/node": "22.20.5",
     "@vitest/coverage-v8": "5.1.2",
