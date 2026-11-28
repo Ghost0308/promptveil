@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { generateKey, redact, Vault } from "promptveil";
 import { promptveilMiddleware } from "promptveil/ai-sdk";
+import { veilMessages } from "promptveil/anthropic";
 
 const original = "Mail jane@example.com from 10.1.2.3";
 const { text, vault } = redact(original);
@@ -22,6 +23,17 @@ const params = await middleware.transformParams({
   type: "generate",
   params: { prompt: [{ role: "user", content: [{ type: "text", text: original }] }] },
 });
-assert.equal(params.prompt[0].content[0].text, text);
+// The placeholder note goes first, then the redacted message.
+assert.equal(params.prompt[0].role, "system");
+assert.equal(params.prompt[1].content[0].text, text);
+
+// Same for the Anthropic SDK entry point.
+const veiled = veilMessages({
+  model: "claude-opus-5-5",
+  max_tokens: 10,
+  messages: [{ role: "user", content: original }],
+});
+assert.equal(veiled.params.messages[0].content, text);
+assert.ok(veiled.params.system.includes("[[EMAIL_1]]"));
 
 console.log("smoke test passed");

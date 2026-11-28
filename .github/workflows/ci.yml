@@ -84,12 +84,16 @@ jobs:
           cd "$RUNNER_TEMP/smoke"
           node smoke.mjs
       # Same layout and command as the publish job in release.yml, without uploading.
+      # A dry run still refuses a version that's already on npm, so the copy gets a
+      # prerelease version that can never exist there, which npm wants a --tag for.
       - name: Dry-run the release's publish command
         run: |
           mkdir -p "$RUNNER_TEMP/release/dist"
-          cp "$RUNNER_TEMP"/promptveil-*.tgz "$RUNNER_TEMP/release/dist/"
           cd "$RUNNER_TEMP/release"
-          npm publish --dry-run ./dist/promptveil-*.tgz
+          tar -xzf "$RUNNER_TEMP"/promptveil-*.tgz
+          (cd package && npm pkg set version="0.0.0-ci.$GITHUB_RUN_ID")
+          npm pack ./package --pack-destination dist
+          npm publish --dry-run --tag ci ./dist/promptveil-*.tgz
 
   workflows:
     # zizmor checks the workflows and dependabot.yml: injection, loose permissions,
