@@ -83,6 +83,13 @@ jobs:
           cp scripts/smoke.mjs "$RUNNER_TEMP/smoke/"
           cd "$RUNNER_TEMP/smoke"
           node smoke.mjs
+      # Same layout and command as the publish job in release.yml, without uploading.
+      - name: Dry-run the release's publish command
+        run: |
+          mkdir -p "$RUNNER_TEMP/release/dist"
+          cp "$RUNNER_TEMP"/promptveil-*.tgz "$RUNNER_TEMP/release/dist/"
+          cd "$RUNNER_TEMP/release"
+          npm publish --dry-run ./dist/promptveil-*.tgz
 
   workflows:
     # zizmor checks the workflows and dependabot.yml: injection, loose permissions,
