@@ -22,6 +22,8 @@ const params = await middleware.transformParams({
   type: "generate",
   params: { prompt: [{ role: "user", content: [{ type: "text", text: original }] }] },
 });
-assert.equal(params.prompt[0].content[0].text, text);
+// The placeholder note goes first, then the redacted message.
+assert.equal(params.prompt[0].role, "system");
+assert.equal(params.prompt[1].content[0].text, text);
 
 console.log("smoke test passed");

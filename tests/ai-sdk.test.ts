@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { promptveilMiddleware } from "../src/ai-sdk.js";
 import { patternDetector } from "../src/detectors.js";
+import { placeholderNote } from "../src/note.js";
 import { openaiKey } from "./fakes.js";
 
 const usage = {
@@ -153,7 +154,8 @@ describe("the middleware on its own", () => {
 
   it("redacts every kind of prompt part", async () => {
     const model = new MockLanguageModelV4({ doGenerate: generated([]) });
-    const wrapped = wrapLanguageModel({ model, middleware: promptveilMiddleware() });
+    // No note here, so the count below is only redacted values.
+    const wrapped = wrapLanguageModel({ model, middleware: promptveilMiddleware({ note: false }) });
     const email = "jane@example.com";
     await wrapped.doGenerate(
       call([
@@ -407,6 +409,53 @@ describe("the middleware on its own", () => {
       { type: "text-delta", id: "u", delta: "and " },
       { type: "text-delta", id: "u", delta: "[[EMAIL" },
     ]);
+  });
+});
+
+describe("the placeholder note", () => {
+  const user = (text: string): LanguageModelV4Prompt => [
+    { role: "system", content: "Be brief." },
+    { role: "user", content: [{ type: "text", text }] },
+  ];
+
+  async function sentWith(options: Parameters<typeof promptveilMiddleware>[0], text: string) {
+    const model = new MockLanguageModelV4({ doGenerate: generated([]) });
+    const wrapped = wrapLanguageModel({ model, middleware: promptveilMiddleware(options) });
+    await wrapped.doGenerate({ prompt: user(text) });
+    return model.doGenerateCalls[0]?.prompt ?? [];
+  }
+
+  it("goes first when something was redacted, in the vault's format", async () => {
+    const sent = await sentWith(
+      { note: true, format: { prefix: "<", suffix: ">" } },
+      "a@example.com",
+    );
+    expect(sent[0]).toEqual({
+      role: "system",
+      content: placeholderNote({ prefix: "<", suffix: ">" }),
+    });
+    expect(sent[0]?.content).toContain("<EMAIL_1>");
+    expect(sent[1]).toEqual({ role: "system", content: "Be brief." });
+  });
+
+  it("can be your own text", async () => {
+    const sent = await sentWith({ note: "Placeholders are real values." }, "a@example.com");
+    expect(sent[0]).toEqual({ role: "system", content: "Placeholders are real values." });
+  });
+
+  it("is on by default", async () => {
+    const sent = await sentWith({}, "a@example.com");
+    expect(sent[0]).toEqual({ role: "system", content: placeholderNote() });
+  });
+
+  it("is left out when nothing was redacted or it's off", async () => {
+    expect(await sentWith({ note: true }, "nothing private")).toHaveLength(2);
+    expect(await sentWith({ note: false }, "a@example.com")).toHaveLength(2);
+    expect(await sentWith({ note: "" }, "a@example.com")).toHaveLength(2);
+  });
+
+  it("uses [[EMAIL_1]] by default", () => {
+    expect(placeholderNote()).toContain("[[EMAIL_1]]");
   });
 });
 

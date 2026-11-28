@@ -13,6 +13,7 @@ import type {
   LanguageModelV4ToolResultOutput,
 } from "@ai-sdk/provider";
 import type { Detector } from "./detectors.js";
+import { resolveNote } from "./note.js";
 import { redact } from "./redact.js";
 import {
   escapeJsonString,
@@ -34,6 +35,13 @@ export interface PromptveilMiddlewareOptions {
    * Defaults to none, so a prompt injection can't steer a secret into a tool call.
    */
   readonly toolCallTypes?: readonly string[];
+  /**
+   * A system message explaining the placeholders, added on calls where something
+   * was redacted. On by default with `placeholderNote()`, since without it models
+   * often remark on the placeholders or drop them. Pass a string to use your own
+   * text, or `false` to leave the prompt alone.
+   */
+  readonly note?: boolean | string;
 }
 
 /**
@@ -70,6 +78,10 @@ export function promptveilMiddleware(
             ...(options.detectors === undefined ? {} : { detectors: options.detectors }),
           }).text,
       );
+      const note = resolveNote(options.note, vault.format);
+      if (note !== undefined && vault.size > 0) {
+        prompt.unshift({ role: "system", content: note });
+      }
       const transformed = { ...params, prompt };
       vaults.set(transformed, vault);
       return transformed;

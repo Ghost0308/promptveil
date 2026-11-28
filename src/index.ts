@@ -11,6 +11,7 @@ export {
   phoneDetector,
   secretsDetector,
 } from "./detectors.js";
+export { placeholderNote } from "./note.js";
 export { type RedactOptions, type RedactResult, type Replacement, redact } from "./redact.js";
 export {
   defaultRules,
