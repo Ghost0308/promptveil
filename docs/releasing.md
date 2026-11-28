@@ -11,12 +11,12 @@ Go to Settings, then Environments, and create `npm`. Add yourself as a required 
 npm sets up trusted publishing from a package's own settings page, so the package has to exist before it can be used. The first version goes up by hand, using the exact tarball CI built and tested:
 
 1. Do steps 1 to 3 from "Each release" below.
-2. When the Release workflow asks for approval of the `npm` environment, reject it. The build job has already uploaded the tarball as the `package` artifact of that run.
-3. Download the artifact from the run page, unzip it, and publish the tarball from your own machine:
+2. When the Release workflow asks for approval of the `npm` environment, reject it. Approving does no harm, since the publish fails without a trusted publisher, but rejecting keeps the run tidy.
+3. Get the tarball CI built. Either download the `package` artifact from the run page, or build it yourself from the tag with `npm ci --ignore-scripts`, `npm run build` and `npm pack`, and check its shasum matches the one in the build job's "npm pack" step. npm packs reproducibly, so they should be identical. Then publish it from your own machine. Keep the `./`, or npm treats the path as a GitHub repo:
 
    ```
    npm login
-   npm publish promptveil-0.1.0.tgz
+   npm publish ./promptveil-0.1.0.tgz
    ```
 
 4. On npmjs.com, open the package, go to Settings, and add a trusted publisher for GitHub Actions:
